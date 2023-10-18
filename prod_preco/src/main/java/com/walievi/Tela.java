@@ -1,7 +1,6 @@
 package com.walievi;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -63,15 +62,30 @@ public class Tela {
 
         // Imprime as opções do menu
         for (int i = 0; i < menuOptions.size(); i++) {
-            String option = (i + 1) + ". " + menuOptions.get(i);
+            String option = menuOptions.get(i);
             String truncatedOption = option.length() > totalLength ? option.substring(0, totalLength) : option;
             System.out.printf("◆ %-" + (totalLength - 3) + "s ◆\n", truncatedOption);
         }
         printSeparator();
     }
 
-
+    public void clearScreen() {
+        String operatingSystem = System.getProperty("os.name");
+    
+        try {
+            if (operatingSystem.contains("Windows")) {
+                new ProcessBuilder("cmd", "/c", "cls").inheritIO().start().waitFor();
+            } else {
+                System.out.print("\033[H\033[2J");
+                System.out.flush();
+            }
+        } catch (Exception e) {
+            // Handle any exceptions
+        }
+    }
+    
     public void print() {
+        clearScreen();
         printSeparator();
         printHeader();
         printSeparator();
@@ -90,5 +104,10 @@ public class Tela {
         printSeparator();
 
         printMenu();
+    }
+
+    public String getOpcao(){
+        String opcao = System.console().readLine();
+        return opcao;
     }
 }

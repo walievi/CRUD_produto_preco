@@ -70,14 +70,27 @@ public class Produto {
     public Timestamp getInsertAt() {
         return insertAt;
     }
-
+    
+    public String getFormattedInsertAt() {
+        return Util.dataToBr(insertAt);
+    }
+    
     public Timestamp getUpdateAt() {
         return updateAt;
+    }
+
+    public String getFormattedUpdateAt() {
+        return Util.dataToBr(updateAt);
     }
 
     public Timestamp getDeletedAt() {
         return deletedAt;
     }
+
+    public String getFormattedDeletedAt() {
+        return Util.dataToBr(deletedAt);
+    }
+
 
     public void setId(int id) {
         this.id = id;
