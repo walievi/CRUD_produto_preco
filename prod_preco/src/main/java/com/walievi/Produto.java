@@ -166,4 +166,19 @@ public class Produto {
 
         return produtos;
     }
+
+    public static List<Produto> getDeleted() throws SQLException {
+        DB db = new DB();
+        List<Produto> produtos = new ArrayList<>();
+        PreparedStatement stmt = db.getConnection().prepareStatement("SELECT * FROM produtos WHERE deleted_at IS NOT NULL");
+        ResultSet rs = stmt.executeQuery();
+
+        while (rs.next()) {
+            int id = rs.getInt("id");
+            Produto produto = new Produto(id);
+            produtos.add(produto);
+        }
+
+        return produtos;
+    }    
 }
