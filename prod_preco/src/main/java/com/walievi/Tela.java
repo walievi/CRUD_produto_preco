@@ -15,10 +15,10 @@ public class Tela {
         columns.put(title, size);
     }
 
-    public void addValue(String column, String value) {
+    public void addValue(String column, String string) {
         if (columns.containsKey(column)) {
             int maxSize = columns.get(column);
-            String truncatedValue = value.length() > maxSize ? value.substring(0, maxSize) : value;
+            String truncatedValue = string.length() > maxSize ? string.substring(0, maxSize) : string;
             lineValues.put(column, truncatedValue);
         }
     }

@@ -6,7 +6,7 @@ import java.sql.Timestamp;
 import java.sql.PreparedStatement;
 import java.util.ArrayList;
 import java.util.List;
-
+import java.sql.Statement;
 import com.walievi.orm.DB;
 
 public class Produto {
@@ -29,6 +29,37 @@ public class Produto {
         loadFromDB(id);
     }
 
+    public List<Preco> precos() throws SQLException{
+        return Preco.getAllByProdutoId(this.id);
+    }
+
+    public void salvar() throws SQLException {
+        PreparedStatement stmt;
+        if (this.id > 0) {
+            // Update
+            stmt = db.getConnection().prepareStatement("UPDATE produtos SET produto = ?, marca = ?, modelo = ?, codigo_barra = ?, update_at = NOW() WHERE id = ?");
+            stmt.setInt(5, this.id);
+        } else {
+            // Insert
+            stmt = db.getConnection().prepareStatement("INSERT INTO produtos (produto, marca, modelo, codigo_barra, insert_at, update_at) VALUES (?, ?, ?, ?, NOW(), NOW())", Statement.RETURN_GENERATED_KEYS);
+        }
+
+        stmt.setString(1, this.produto);
+        stmt.setString(2, this.marca);
+        stmt.setString(3, this.modelo);
+        stmt.setString(4, this.codigoBarra);
+
+        stmt.executeUpdate();
+
+        // Obtém o ID gerado para inserções
+        if (this.id == 0) {
+            ResultSet generatedKeys = stmt.getGeneratedKeys();
+            if (generatedKeys.next()) {
+                this.id = generatedKeys.getInt(1);
+            }
+        }
+    }
+    
     private void loadFromDB(int id) throws SQLException {
         PreparedStatement stmt = db.getConnection().prepareStatement("SELECT * FROM produtos WHERE id = ?");
         stmt.setInt(1, id);
@@ -91,7 +122,6 @@ public class Produto {
         return Util.dataToBr(deletedAt);
     }
 
-
     public void setId(int id) {
         this.id = id;
     }
@@ -112,18 +142,16 @@ public class Produto {
         this.codigoBarra = codigoBarra;
     }
 
-    public void setInsertAt(Timestamp insertAt) {
-        this.insertAt = insertAt;
+    public void desativar() throws SQLException {
+        PreparedStatement stmt = db.getConnection().prepareStatement("UPDATE produtos SET deleted_at = NOW() WHERE id = ?");
+        stmt.setInt(1, this.id);
     }
 
-    public void setUpdateAt(Timestamp updateAt) {
-        this.updateAt = updateAt;
-    }
-
-    public void setDeletedAt(Timestamp deletedAt) {
-        this.deletedAt = deletedAt;
-    }
-
+    public void reativar() throws SQLException {
+        PreparedStatement stmt = db.getConnection().prepareStatement("UPDATE produtos SET deleted_at = NULL WHERE id = ?");
+        stmt.setInt(1, this.id);
+    }    
+    
     public static List<Produto> getAll() throws SQLException {
         DB db = new DB();
         List<Produto> produtos = new ArrayList<>();
