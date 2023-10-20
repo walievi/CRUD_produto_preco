@@ -1,68 +1,39 @@
 package com.walievi;
 
+import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.Scanner;
 
 public class Main {
 
     public static void main(String[] args) {
         try {
-            int status = 99;
-            while(status != 0){
-                status = exibirMenu();
+            boolean sair = false;
+            while (!sair) {
+                String opcao = menuProdutos();
 
-                switch(status) {
-                    case 1:
-                        inserirNovoProduto();
-                        break;
-                        
-                    case 2:
-                        System.out.println("Opção não implementada.");
-                        
-                }                
-                
+                try {
+                    verProduto(Integer.parseInt(opcao));
+                } catch (NumberFormatException e) {
+                    switch(opcao) {
+                        case "I":
+                            inserirNovoProduto();
+                            break;
+                        case "D":
+                            verDesativados();
+                            break;
+                        case "S":
+                            sair = true;
+                            break;
+                    }
+                }
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
-    public static int exibirMenu() throws SQLException {
-        while (true) {
-            Tela tela = configuraTela();
-
-            List<Produto> produtos = Produto.getAll();
-            preencheTelaComProdutos(tela, produtos);
-            adicionaOpcoesMenu(tela);
-            
-            tela.print();
-            String opcao = tela.getOpcao().toUpperCase();
-
-            boolean podeConverterParaInt = true;
-            try {
-                Integer.parseInt(opcao);
-            } catch (NumberFormatException e) {
-                podeConverterParaInt = false;
-            }
-            
-            if (podeConverterParaInt) {
-                verProduto(Integer.parseInt(opcao));
-            }else{   
-                switch(opcao) {
-                    case "I":
-                        return 1;
-                    case "D":
-                        return 2;                    
-                    case "S":
-                        return 0;
-                }
-            }
-            
-        }
-    }
-
-    public static Tela configuraTela() {
+    public static String menuProdutos() throws SQLException{
         Tela tela = new Tela();
         
         tela.newColumn("ID", 5);
@@ -70,55 +41,94 @@ public class Main {
         tela.newColumn("Marca", 20);
         tela.newColumn("Modelo", 20);
         tela.newColumn("Código de Barra", 20);
-        tela.newColumn("Inserido em", 20);
-        tela.newColumn("Atualizado em", 20);
-        return tela;
-    }
+        tela.newColumn("Preço", 10);
 
-    public static void preencheTelaComProdutos(Tela tela, List<Produto> produtos) {
-        for (Produto produto : produtos) {
+        for (Produto produto : Produto.getAll()) {
             tela.addValue("ID", String.valueOf(produto.getId()));
             tela.addValue("Produto", produto.getProduto());
             tela.addValue("Marca", produto.getMarca());
             tela.addValue("Modelo", produto.getModelo());
             tela.addValue("Código de Barra", produto.getCodigoBarra());
-            tela.addValue("Inserido em", produto.getFormattedInsertAt());  // Você pode formatar a data aqui
-            tela.addValue("Atualizado em", produto.getFormattedUpdateAt()); // Você pode formatar a data aqui
-            tela.addValue("Deletado em", produto.getDeletedAt() != null ? produto.getFormattedDeletedAt() : "---");
+            String valorString = "---";
+            System.out.println(produto.preco().getValorCobrar());
+            if (produto.preco() != null && produto.preco().getValorCobrar() != null){
+                valorString = produto.preco().getValorCobrar().toString();
+            }
+            tela.addValue("Preço", valorString);
             tela.addLine();
-        }
-    }
+        }        
 
-    public static void adicionaOpcoesMenu(Tela tela) {
         tela.addMenuOption("Digite o ID do produto para ver detalhes ou editar");
         tela.addMenuOption("I - Inserir novo produto");
         tela.addMenuOption("D - Ver produtos desativados");
         tela.addMenuOption("S - Sair");
+
+        tela.print();
+
+        return Tela.getOpcao();
     }
 
+    public static void verDesativados() throws SQLException{
+        Tela tela = new Tela();
+        
+        tela.newColumn("ID", 5);
+        tela.newColumn("Produto", 15);
+        tela.newColumn("Marca", 20);
+        tela.newColumn("Modelo", 20);
+        tela.newColumn("Código de Barra", 20);
+        tela.newColumn("Preço", 10);
+        tela.newColumn("Desativado em", 20);
+
+        for (Produto produto : Produto.getDeleteds()) {
+            tela.addValue("ID", String.valueOf(produto.getId()));
+            tela.addValue("Produto", produto.getProduto());
+            tela.addValue("Marca", produto.getMarca());
+            tela.addValue("Modelo", produto.getModelo());
+            tela.addValue("Código de Barra", produto.getCodigoBarra());
+            String valorString = "---";
+            System.out.println(produto.preco().getValorCobrar());
+            if (produto.preco() != null && produto.preco().getValorCobrar() != null){
+                valorString = produto.preco().getValorCobrar().toString();
+            }
+            tela.addValue("Preço", valorString);
+            tela.addValue("Desativado em", produto.getFormattedDeletedAt());
+            tela.addLine();
+        }        
+
+        tela.addMenuOption("Digite o ID do produto para ver detalhes ou editar");
+        tela.addMenuOption("V - Voltar");
+
+        tela.print();
+
+        String opcao = Tela.getOpcao();
+        try {
+            verProduto(Integer.parseInt(opcao));
+        } catch (NumberFormatException e) {
+            if(opcao.equals("V")){
+                return;
+            }
+        }        
+    }    
+
     public static void inserirNovoProduto() throws SQLException {
-        Scanner scanner = new Scanner(System.in);
         Produto novoProduto = new Produto();
         
         System.out.println("Digite o nome do produto:");
-        novoProduto.setProduto(scanner.nextLine());
+        novoProduto.setProduto(Tela.getOpcao());
         
         System.out.println("Digite a marca do produto:");
-        novoProduto.setMarca(scanner.nextLine());
+        novoProduto.setMarca(Tela.getOpcao());
         
         System.out.println("Digite o modelo do produto:");
-        novoProduto.setModelo(scanner.nextLine());
+        novoProduto.setModelo(Tela.getOpcao());
         
         System.out.println("Digite o código de barras do produto:");
-        novoProduto.setCodigoBarra(scanner.nextLine());
+        novoProduto.setCodigoBarra(Tela.getOpcao());
         
         novoProduto.salvar();
-        
-        System.out.println("Produto inserido com sucesso!");
     }
 
     public static void verProduto(int id) throws SQLException {
-        Scanner scanner = new Scanner(System.in);
         
         boolean sair = false;
         while (!sair) {  
@@ -150,6 +160,7 @@ public class Main {
             tela.addLine();
             
             String valorString = "---";
+
             Preco valor = Preco.getCurrentByProdutoId(produto.getId());
             if (valor != null){
                 valorString = valor.getValorCobrar().toString();
@@ -174,11 +185,12 @@ public class Main {
             tela.addMenuOption("E - Editar Produto");
             tela.addMenuOption("D - Desativar Produto");
             tela.addMenuOption("R - Reativar Produto");
+            tela.addMenuOption("H - Ver histórico de preços");
             tela.addMenuOption("I - Inserir novo Valor");
             tela.addMenuOption("V - Voltar");
             
             tela.print();
-            String opcao = tela.getOpcao().toUpperCase();
+            String opcao = Tela.getOpcao();
             
             switch (opcao) {
                 case "E":
@@ -189,9 +201,12 @@ public class Main {
                     break;
                 case "R":
                     produto.reativar();
-                    break;                    
+                    break;
+                case "H":
+                    historicoPrecos(produto.precos());
+                    break;
                 case "I":
-                    //inserirNovoPreco();
+                    inserirNovoPreco(produto);
                     break;
                 case "V":
                     sair = true;
@@ -201,34 +216,67 @@ public class Main {
         }
             
     }
+    
+    public static void inserirNovoPreco(Produto produto) throws SQLException{
+        System.out.println("Digite o novo preço:");
+        if(produto.preco() != null && produto.preco().getValorCobrar() != null){
+            System.out.println("[" + produto.preco().getValorCobrar() + "]");
+        }
 
-    public static void desativarProduto(Produto produto) throws SQLException{
-        produto.desativar();
+        String novoPrecoString = Tela.getOpcao();
+        if (!novoPrecoString.isEmpty()) {
+            BigDecimal novoPreco = new BigDecimal(novoPrecoString);
+            produto.preco().setValorCobrar(novoPreco);
+        }
+
+        System.out.println("Digite o novo desconto máximo:");
+        if(produto.preco() != null && produto.preco().getMaxDesconto() != null){
+            System.out.println("[" + produto.preco().getMaxDesconto() + "]");
+        }
+
+        String novoDescontoString = Tela.getOpcao();
+        if (!novoDescontoString.isEmpty()) {
+            BigDecimal novoDesconto = new BigDecimal(novoDescontoString);
+            produto.preco().setMaxDesconto(novoDesconto);
+        }
+
+        System.out.println("Digite o novo valor pago:");
+        if(produto.preco() != null && produto.preco().getValorPago() != null){
+            System.out.println("[" + produto.preco().getValorPago() + "]");
+        }
+
+        String novoValorPagoString = Tela.getOpcao();
+        if (!novoValorPagoString.isEmpty()) {
+            BigDecimal novoValorPago = new BigDecimal(novoValorPagoString);
+            produto.preco().setValorPago(novoValorPago);
+        }
+
+        produto.preco().salvar();
+        
     }
 
     public static void editarProduto(Produto produto) throws SQLException {
-        Scanner scanner = new Scanner(System.in);
         
         System.out.println("Digite o nome do produto: [" + produto.getProduto() + "]");
-        String novoNome = scanner.nextLine();
+        String novoNome = Tela.getOpcao();
         if (!novoNome.isEmpty()) {
             produto.setProduto(novoNome);
         }
 
         System.out.println("Digite a marca do produto: [" + produto.getMarca() + "]");
-        String novaMarca = scanner.nextLine();
+        String novaMarca = Tela.getOpcao();
         if (!novaMarca.isEmpty()) {
             produto.setMarca(novaMarca);
         }
 
         System.out.println("Digite o modelo do produto: [" + produto.getModelo() + "]");
-        String novoModelo = scanner.nextLine();
+        String novoModelo = Tela.getOpcao();
         if (!novoModelo.isEmpty()) {
             produto.setModelo(novoModelo);
         }
 
         System.out.println("Digite o código de barras do produto: [" + produto.getCodigoBarra() + "]");
-        String novoCodigoBarra = scanner.nextLine();
+        String novoCodigoBarra = Tela.getOpcao();
         if (!novoCodigoBarra.isEmpty()) {
             produto.setCodigoBarra(novoCodigoBarra);
         }
@@ -238,6 +286,30 @@ public class Main {
         System.out.println("Produto atualizado com sucesso!");        
     }
  
+
+
+    public static void historicoPrecos(List<Preco> precos) throws SQLException {    
+        Tela tela = new Tela();
+        tela.newColumn("Data", 20);
+        tela.newColumn("Preço Venda", 15);
+        tela.newColumn("Desconto Máx", 15);
+        tela.newColumn("Preço Pago", 15);
+        tela.newColumn("Desativado em", 20);
+    
+        for (Preco preco : precos) {
+            tela.addValue("Data", preco.getFormattedInsertAt());
+            tela.addValue("Preço Venda", preco.getValorCobrar().toString());
+            tela.addValue("Desconto Máx", preco.getMaxDesconto().toString());
+            tela.addValue("Preço Pago", preco.getMaxDesconto().toString());
+            tela.addValue("Desativado em", preco.getDeletedAt() != null ? preco.getFormattedDeletedAt() : "---");
+            tela.addLine();
+        }
+        tela.addMenuOption("V - Voltar");    
+        tela.print();
+
+        Tela.getOpcao();
+    }
+    
 
 
 }

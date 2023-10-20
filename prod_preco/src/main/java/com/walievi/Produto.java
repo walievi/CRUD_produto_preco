@@ -19,6 +19,8 @@ public class Produto {
     private Timestamp updateAt;
     private Timestamp deletedAt;
     private DB db;
+    private List<Preco> precos;
+    private Preco preco;
 
     public Produto() throws SQLException {
         this.db = new DB();
@@ -27,20 +29,38 @@ public class Produto {
     public Produto(int id) throws SQLException {
         this();
         loadFromDB(id);
+        this.preco = getPreco();
+        this.precos = getPrecos();
     }
 
-    public List<Preco> precos() throws SQLException{
+    public List<Preco> precos(){
+        return this.precos;
+    }
+    private List<Preco> getPrecos() throws SQLException{
         return Preco.getAllByProdutoId(this.id);
+    }
+
+    public Preco preco(){
+        return this.preco;
+    }
+
+    private Preco getPreco() throws SQLException{
+        Preco preco = Preco.getCurrentByProdutoId(this.id);
+        if(preco != null){
+            return preco;
+        }
+
+        preco = new Preco();
+        preco.setProdutoId(this.id);
+        return preco;  
     }
 
     public void salvar() throws SQLException {
         PreparedStatement stmt;
         if (this.id > 0) {
-            // Update
             stmt = db.getConnection().prepareStatement("UPDATE produtos SET produto = ?, marca = ?, modelo = ?, codigo_barra = ?, update_at = NOW() WHERE id = ?");
             stmt.setInt(5, this.id);
         } else {
-            // Insert
             stmt = db.getConnection().prepareStatement("INSERT INTO produtos (produto, marca, modelo, codigo_barra, insert_at, update_at) VALUES (?, ?, ?, ?, NOW(), NOW())", Statement.RETURN_GENERATED_KEYS);
         }
 
@@ -51,7 +71,6 @@ public class Produto {
 
         stmt.executeUpdate();
 
-        // Obtém o ID gerado para inserções
         if (this.id == 0) {
             ResultSet generatedKeys = stmt.getGeneratedKeys();
             if (generatedKeys.next()) {
@@ -77,7 +96,6 @@ public class Produto {
         }
     }
 
-    // Getters
     public int getId() {
         return id;
     }
@@ -145,11 +163,13 @@ public class Produto {
     public void desativar() throws SQLException {
         PreparedStatement stmt = db.getConnection().prepareStatement("UPDATE produtos SET deleted_at = NOW() WHERE id = ?");
         stmt.setInt(1, this.id);
+        stmt.executeUpdate();
     }
 
     public void reativar() throws SQLException {
         PreparedStatement stmt = db.getConnection().prepareStatement("UPDATE produtos SET deleted_at = NULL WHERE id = ?");
         stmt.setInt(1, this.id);
+        stmt.executeUpdate();
     }    
     
     public static List<Produto> getAll() throws SQLException {
@@ -167,7 +187,7 @@ public class Produto {
         return produtos;
     }
 
-    public static List<Produto> getDeleted() throws SQLException {
+    public static List<Produto> getDeleteds() throws SQLException {
         DB db = new DB();
         List<Produto> produtos = new ArrayList<>();
         PreparedStatement stmt = db.getConnection().prepareStatement("SELECT * FROM produtos WHERE deleted_at IS NOT NULL");

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Scanner;
 
 public class Tela {
     private final Map<String, Integer> columns = new LinkedHashMap<>();
@@ -56,8 +57,8 @@ public class Tela {
     public void printMenu() {
         // Calcula o tamanho total da tabela
         int totalLength = columns.values().stream().mapToInt(Integer::intValue).sum();
-        totalLength += columns.size() * 2; // Espaços em ambos os lados de cada valor
-        totalLength += columns.size(); // Caracteres "◆" entre as colunas e nas extremidades
+        totalLength += columns.size() * 2;
+        totalLength += columns.size();
 
 
         // Imprime as opções do menu
@@ -80,7 +81,7 @@ public class Tela {
                 System.out.flush();
             }
         } catch (Exception e) {
-            // Handle any exceptions
+            System.out.println("Não foi possível limpar a tela.");       
         }
     }
     
@@ -106,8 +107,22 @@ public class Tela {
         printMenu();
     }
 
-    public String getOpcao(){
-        String opcao = System.console().readLine();
+    public static String getOpcao() {
+        return getOpcao(null);
+    }
+
+    public static String getOpcao(String mensagem) {
+        if (mensagem != null) {
+            System.out.println(mensagem);
+        }
+        String opcao = "";
+        try {
+            Scanner scanner = new Scanner(System.in);
+            opcao = scanner.nextLine().toUpperCase();
+        } catch (Exception e) {
+            return null;
+        }
         return opcao;
     }
+
 }

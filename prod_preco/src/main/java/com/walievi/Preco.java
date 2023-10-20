@@ -28,18 +28,14 @@ public class Preco {
         loadFromDB(id);
     }
 
-    // Implementação do método salvar
     public void salvar() throws SQLException {
         PreparedStatement stmt;
         if (this.id > 0) {
-            // Update
-            stmt = db.getConnection().prepareStatement("UPDATE preco SET produto_id = ?, valor_cobrar = ?, max_desconto = ?, valor_pago = ?, update_at = NOW() WHERE id = ?");
-            stmt.setInt(5, this.id); // Preenchendo o último valor que é exclusivo do UPDATE
-        } else {
-            // Insert
-            stmt = db.getConnection().prepareStatement("INSERT INTO preco (produto_id, valor_cobrar, max_desconto, valor_pago, insert_at, update_at) VALUES (?, ?, ?, ?, NOW(), NOW())", Statement.RETURN_GENERATED_KEYS);
-        }
-
+            stmt = db.getConnection().prepareStatement("UPDATE precos SET deleted_at = NOW() WHERE id = ?");
+            stmt.setInt(1, this.id);
+            stmt.executeUpdate();
+        } 
+        stmt = db.getConnection().prepareStatement("INSERT INTO precos (produto_id, valor_cobrar, max_desconto, valor_pago, insert_at, update_at) VALUES (?, ?, ?, ?, NOW(), NOW())", Statement.RETURN_GENERATED_KEYS);
         stmt.setInt(1, this.produtoId);
         stmt.setBigDecimal(2, this.valorCobrar);
         stmt.setBigDecimal(3, this.maxDesconto);
@@ -47,7 +43,6 @@ public class Preco {
 
         stmt.executeUpdate();
 
-        // Obtém o ID gerado para inserções
         if (this.id == 0) {
             ResultSet generatedKeys = stmt.getGeneratedKeys();
             if (generatedKeys.next()) {
@@ -56,7 +51,6 @@ public class Preco {
         }
     }
 
-    // Implementação do método loadFromDB
     private void loadFromDB(int id) throws SQLException {
         PreparedStatement stmt = db.getConnection().prepareStatement("SELECT * FROM precos WHERE id = ?");
         stmt.setInt(1, id);
@@ -78,7 +72,6 @@ public class Preco {
         return new Produto(this.produtoId);
     }
 
-    // Getters e Setters
     public int getId() {
         return id;
     }
@@ -122,13 +115,25 @@ public class Preco {
     public Timestamp getInsertAt() {
         return insertAt;
     }
-
+    
+    public String getFormattedInsertAt() {
+        return Util.dataToBr(insertAt);
+    }
+    
     public Timestamp getUpdateAt() {
         return updateAt;
     }
 
+    public String getFormattedUpdateAt() {
+        return Util.dataToBr(updateAt);
+    }
+
     public Timestamp getDeletedAt() {
         return deletedAt;
+    }
+
+    public String getFormattedDeletedAt() {
+        return Util.dataToBr(deletedAt);
     }
 
     public void desativar() throws SQLException {
@@ -139,7 +144,6 @@ public class Preco {
             System.out.println("Preco não pode ser desativado porque ainda não foi salvo no banco de dados.");
         }
     }
-    
 
     public static List<Preco> getAll() throws SQLException {
         DB db = new DB();
@@ -152,14 +156,13 @@ public class Preco {
             Preco preco = new Preco(id);
             precos.add(preco);
         }
-
         return precos;
     }
 
     public static List<Preco> getAllByProdutoId(int produtoId) throws SQLException {
         DB db = new DB();
         List<Preco> precos = new ArrayList<>();
-        PreparedStatement stmt = db.getConnection().prepareStatement("SELECT * FROM precos WHERE produto_id = ? AND deleted_at IS NULL");
+        PreparedStatement stmt = db.getConnection().prepareStatement("SELECT * FROM precos WHERE produto_id = ?");
         stmt.setInt(1, produtoId);
         ResultSet rs = stmt.executeQuery();
 
